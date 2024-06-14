@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Very Simple Snake Game</title>
+</head>
+<body>
+    
+    <script>
+        //1.First step
+        //we need to create the table html element.
+        //this will be used as the arena.
+        (function createArena(){
+            const vertical = 10;
+            const horizontal = 10;
+
+            let string_table = `
+                <table border="1" style="border-collapse:collapse;background-color:green;">
+            `;
+            for(let i=0;i<vertical;i++){
+                string_table += `
+                    <tr>
+                `;
+                for(let j=0;j<horizontal;j++){
+                    string_table += `
+                        <td style="height:20px;width:20px;"></td>
+                    `;
+                };
+                string_table += `
+                    </tr>
+                `;
+            };
+            string_table += `
+                </table>
+            `;
+            document.body.insertAdjacentHTML("afterbegin", string_table);
+        })();
+        //---------------------------------------------------------------------------------------------------
+        //2.Second.
+        //Generate the snake body, and apply them in the arena
+        (function createSnake(){
+            const start_vertical = 4;
+            let start_horizontal = 4;
+            const snake_length = 4;
+
+            for(let i=0;i<snake_length;i++){
+                const body_element = `<div data-bodypart="${i}" style="width:20px;height:20px;outline:solid 1px yellow;background-color:grey;"></div>`;
+                document.querySelector(`table tr:nth-child(4) td:nth-child(${start_horizontal++})`).innerHTML = body_element;
+            };
+        })();
+        //---------------------------------------------------------------------------------------------------
+        //3.Third
+        //Adding control movement of the snake.
+        //Snake should be able to move up, right, down, left direction.
+        
+
+    </script>
+</body>
+</html>
