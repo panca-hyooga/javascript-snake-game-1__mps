@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Very Simple Snake Game</title>
+</head>
+<body>
+    
+    <button id="start" type="button">START GAME</button>
+    <div style="background-color: #ddd;padding: 4px;margin-top: 5px;">
+        how to play : press start to spawn the food, and click up,left,down,right keyboard arrow button to guide the snake so he can eat da food.<br/>
+        why do you even wanna play this game? : to train your finger muscle so you could play piano better :)
+    </div>
+    <div id="scoreboard" style="background-color: green;color:#fff;font-size: 30px;display: inline-block;"></div>
+
+    <script>
+        //global variable
+        let game_over = false;
+        let score = 0;
+        let time_lapsed = 0;
+
+        //1.First step
+        //we need to create the table html element.
+        //this will be used as the arena.
+        (function createArena(){
+            const vertical = 10;
+            const horizontal = 10;
+
+            let string_table = `
+                <table border="1" style="border-collapse:collapse;background-color:green;">
+                    <tbody>
+            `;
+            for(let i=0;i<vertical;i++){
+                string_table += `
+                        <tr>
+                `;
+                for(let j=0;j<horizontal;j++){
+                    string_table += `
+                            <td style="height:20px;width:20px;"></td>
+                    `;
+                };
+                string_table += `
+                        </tr>
+                `;
+            };
+            string_table += `
+                    </tbody>
+                </table>
+            `;
+            document.body.insertAdjacentHTML("afterbegin", string_table);
+        })();
+        //---------------------------------------------------------------------------------------------------
+        //2.Second.
+        //Generate the snake body, and apply them in the arena
+        (function createSnake(){
+            const start_vertical = 4;
+            let start_horizontal = 4;
+            const snake_length = 4;
+
+            for(let i=0;i<snake_length;i++){
+                const body_element = `<div data-bodypart="" style="width:20px;height:20px;outline:solid 1px yellow;background-color:grey;"></div>`;
+                document.querySelector(`table tr:nth-child(4) td:nth-child(${start_horizontal++})`).innerHTML = body_element;
+            };
+
+            document.querySelector("div[data-bodypart]").style.backgroundColor = "yellow";
+        })();
+        //---------------------------------------------------------------------------------------------------
+        //3.Third
+        //Adding control movement of the snake.
+        //Snake should be able to move up, right, down, left direction.
+        (function addSnakeControl(){
+            const snake_bodypart = Array.from(document.querySelectorAll(`div[data-bodypart]`));
+            let last_moving_dir = "left";
+            let last_tail_td_parent;
+            
+            function moveBody(){
+                last_tail_td_parent = snake_bodypart[snake_bodypart.length-1].closest("td");
+
+                for(let k=snake_bodypart.length-1;k>0;k--){
+                    const curr_bodypart = snake_bodypart[k];
+                    snake_bodypart[k-1].parentNode.appendChild(curr_bodypart);
+                };
+            };
+
+            document.body.addEventListener("keydown", function(event){
+                if(game_over !== false){
+                    return;
+                };
+
+                const head_td_parent = snake_bodypart[0].closest("td");
+                const head_tr_parent = snake_bodypart[0].closest("tr");
+
+                //====================================================================================
+                //move the snake whole bodypart.
+                switch(event.key){
+                    case "ArrowUp":
+                        if(last_moving_dir==="down"){
+                            return;
+                        };
+
+                        last_moving_dir = "up";
+                        moveBody();
+
+                        (function headMoveToUp(){
+                            if(head_tr_parent.previousElementSibling){
+                                head_tr_parent.previousElementSibling.children[head_td_parent.cellIndex].appendChild(snake_bodypart[0]);
+                            }else{
+                                head_tr_parent.closest("table tbody").lastElementChild.children[head_td_parent.cellIndex].appendChild(snake_bodypart[0]);
+                            };
+                        })();
+                    break;
+                    case "ArrowDown":
+                        if(last_moving_dir==="up"){
+                            return;
+                        };
+
+                        last_moving_dir = "down";
+                        moveBody();
+
+                        (function headMoveToDown(){
+                            if(head_tr_parent.nextElementSibling){
+                                head_tr_parent.nextElementSibling.children[head_td_parent.cellIndex].appendChild(snake_bodypart[0]);
+                            }else{
+                                head_tr_parent.closest("table tbody").firstElementChild.children[head_td_parent.cellIndex].appendChild(snake_bodypart[0]);
+                            };
+                        })();
+                    break;
+                    case "ArrowLeft":
+                        if(last_moving_dir==="right"){
+                            return;
+                        };
+
+                        last_moving_dir = "left";
+                        moveBody();
+
+                        (function headMoveToLeft(){
+                            if(head_td_parent.previousElementSibling){
+                                head_td_parent.previousElementSibling.appendChild(snake_bodypart[0]);
+                            }else{
+                                head_tr_parent.lastElementChild.appendChild(snake_bodypart[0]);
+                            };
+                        })();
+                    break;
+                    case "ArrowRight":
+                        if(last_moving_dir==="left"){
+                            return;
+                        };
+
+                        last_moving_dir = "right";
+                        moveBody();
+
+                        (function headMoveToRight(){
+                            if(head_td_parent.nextElementSibling){
+                                head_td_parent.nextElementSibling.appendChild(snake_bodypart[0]);
+                            }else{
+                                head_tr_parent.firstElementChild.appendChild(snake_bodypart[0]);
+                            };
+                        })();
+                    break;
+                };
+                
+                //====================================================================================
+                //eat the food when it is collided with snake head...
+                const updated_head_td_parent = snake_bodypart[0].closest("td");
+                const is_there_food = updated_head_td_parent.querySelector("div.food");
+                if(is_there_food){
+                    updated_head_td_parent.removeChild(is_there_food);
+
+                    //increase the body length of our snake.
+                    const clone_tail = snake_bodypart[snake_bodypart.length-1].cloneNode(true);
+                    last_tail_td_parent.appendChild(clone_tail);
+                    snake_bodypart.push(clone_tail);
+                    score+=1;
+                };
+
+                //====================================================================================
+                //if snake head has been colided with his own body.
+                //then game is overrrr...
+                if(snake_bodypart[0].closest("td").children.length > 1){
+                    game_over = true;
+                    
+                    document.getElementById("scoreboard").innerHTML = `score:${score}. <br/>time:${time_lapsed}`;
+                };
+            });
+        })();
+        //---------------------------------------------------------------------------------------------------
+        //4.Fourth
+        //Enable food re-spawn at the random point on the arena, each time that food being eaten by the snake.
+        (function spawnFood(){
+            document.getElementById("start").addEventListener("click", function(){
+                this.parentNode.removeChild(this);
+
+                window.setInterval(function(){
+                    let found_food = document.querySelector("table tbody div.food");
+
+                    if(!found_food){
+                        const avaliable_td = document.querySelectorAll("table tbody tr td:not(:has(div[data-bodypart]))");
+                        const random_number = Math.floor(Math.random() * avaliable_td.length); //return random number between 0 and avaliable_td array length
+                        avaliable_td[random_number].innerHTML = '<div class="food" style="background:red;width:20px;height:20px;"></div>';
+                    };
+
+                    time_lapsed += 0.2;
+                }, 200);
+            });
+        })();
+
+    </script>
+</body>
+</html>
